@@ -1,6 +1,6 @@
 package ru.bmstu.service.impl;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.bmstu.dto.TokenChangeRequest;
 import ru.bmstu.model.Student;
@@ -10,10 +10,13 @@ import ru.bmstu.service.StudentService;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
-public class StudentServiceImpl implements StudentService {
 
+public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
+
+    public StudentServiceImpl(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
 
     @Override
     public List<Student> getAllStudents() {

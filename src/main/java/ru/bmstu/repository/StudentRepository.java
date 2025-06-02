@@ -1,5 +1,5 @@
 package ru.bmstu.repository;
-
+//Интерфейс, который определяет базовые операции над списком студентов
 import ru.bmstu.model.Student;
 
 import java.util.List;

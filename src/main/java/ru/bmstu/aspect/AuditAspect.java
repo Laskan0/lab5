@@ -35,5 +35,11 @@ public class AuditAspect {
     public void logRemoveStudent(JoinPoint joinPoint, Student student) {
         System.out.printf("[%s] [INFO] Преподаватель удалил студента: %s%n",
                 LocalDateTime.now().format(formatter), student);
+
+    }
+    @Before("execution(* ru.bmstu.service.impl.StudentServiceImpl.getAllStudents(..))")
+    public void logViewAllStudents(JoinPoint joinPoint) {
+        System.out.printf("[%s] [INFO] User viewed all students%n",
+                LocalDateTime.now().format(formatter));
     }
 }
