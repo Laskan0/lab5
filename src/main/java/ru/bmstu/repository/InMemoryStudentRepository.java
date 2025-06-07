@@ -1,5 +1,5 @@
 package ru.bmstu.repository;
-//Реализация интерфейса StudentRepo. Работает с данными в памяти. Загружает данные из файла и выполняет операции
+
 import org.springframework.stereotype.Repository;
 import ru.bmstu.model.Student;
 
@@ -10,25 +10,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Repository // Аннотация spring, которая указывает, что это компонент, который управляет данными
+@Repository
 public class InMemoryStudentRepository implements StudentRepository {
 
     private final List<Student> students = new ArrayList<>();
-    private static final String CSV_FILE_PATH = "students.csv";
+    private static final String CSV_FILE_PATH = "data/students.csv";
 
-    @PostConstruct//Аннотация, которая говорит, что метод будет вызван автоматически создания бина
+    @PostConstruct
     public void init() {
         loadStudentsFromCSV();
     }
 
+    // Чтение из файла в classpath (src/main/resources)
     private void loadStudentsFromCSV() {
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(CSV_FILE_PATH);
-             //автоматически закрывает ресурс после завершения работы
-             //Получаем InputScream к файлу с данными
-             //считываем как ресурс
-
-             BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(inputStream), StandardCharsets.UTF_8))) {
-            //
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(CSV_FILE_PATH)),
+                        StandardCharsets.UTF_8
+                )
+        )) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
@@ -36,22 +36,33 @@ public class InMemoryStudentRepository implements StudentRepository {
                     students.add(new Student(parts[0], parts[1], Integer.parseInt(parts[2])));
                 }
             }
-
         } catch (IOException e) {
-            throw new RuntimeException("Error loading students from CSV", e);
+            throw new RuntimeException("SCV loading failed", e);
         }
     }
 
     private void saveStudentsToCSV() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(CSV_FILE_PATH))) {
+        File file = new File(
+                Objects.requireNonNull(getClass().getClassLoader().getResource(CSV_FILE_PATH)).getFile()
+        );
 
+        // Создаем файл, если его нет
+        if (!file.exists()) {
+            file.getParentFile().mkdirs(); // Создаем директории, если нужно
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot create file " + CSV_FILE_PATH, e);
+            }
+        }
 
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             for (Student student : students) {
                 writer.write(student.getFirstName() + "," + student.getLastName() + "," + student.getTokenCount());
                 writer.newLine();
             }
         } catch (IOException e) {
-            throw new RuntimeException("Error saving students to CSV", e);
+            throw new RuntimeException("CSV saving error", e);
         }
     }
 
@@ -63,25 +74,30 @@ public class InMemoryStudentRepository implements StudentRepository {
     @Override
     public Student findByFullName(String lastName, String firstName) {
         return students.stream()
-                .filter(s -> s.getLastName().equals(lastName) && s.getFirstName().equals(firstName))
+                .filter(s -> s.getLastName().equalsIgnoreCase(lastName) &&
+                        s.getFirstName().equalsIgnoreCase(firstName))
                 .findFirst()
                 .orElse(null);
     }
 
     @Override
     public void save(Student student) {
-        students.removeIf(s -> s.getLastName().equals(student.getLastName())
-                && s.getFirstName().equals(student.getFirstName()));
+        students.removeIf(s ->
+                s.getLastName().equalsIgnoreCase(student.getLastName()) &&
+                        s.getFirstName().equalsIgnoreCase(student.getFirstName())
+        );
         students.add(student);
-        saveStudentsToCSV(); // Сохраняем изменения в CSV
+        saveStudentsToCSV();
     }
 
     @Override
     public boolean delete(Student student) {
-        boolean deleted = students.removeIf(s -> s.getLastName().equals(student.getLastName())
-                && s.getFirstName().equals(student.getFirstName()));
+        boolean deleted = students.removeIf(s ->
+                s.getLastName().equalsIgnoreCase(student.getLastName()) &&
+                        s.getFirstName().equalsIgnoreCase(student.getFirstName())
+        );
         if (deleted) {
-            saveStudentsToCSV(); // Сохраняем изменения в CSV
+            saveStudentsToCSV();
         }
         return deleted;
     }

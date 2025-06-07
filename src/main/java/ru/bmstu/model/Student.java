@@ -32,6 +32,6 @@ public class Student {
     // Для удобного вывода в консоль
     @Override
     public String toString() {
-        return "Имя: " + firstName + " " + lastName + "\n" + "Жетоны: " + tokenCount;
+        return "Name: " + firstName + " " + lastName + "\n" + "Tokens: " + tokenCount;
     }
 }
